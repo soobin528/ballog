@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.core.database import Base, engine
 from app.models import Entry, EntryMission, Game, User  # noqa: F401
+from app.routers.entry_router import router as entry_router
 
 
 def create_tables():
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(entry_router)
 
 
 @app.get("/")
