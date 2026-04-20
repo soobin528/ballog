@@ -14,6 +14,7 @@ class Entry(Base):
     watched_team = Column(String(100), nullable=False)
     memo = Column(Text, nullable=True)
     diary_text = Column(Text, nullable=True)
+    ticket_image_url = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

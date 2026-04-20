@@ -6,6 +6,7 @@ from app.models.entry_mission import EntryMission
 from app.models.game import Game
 from app.models.user import User
 from app.schemas.entry_schema import EntryCreate
+from app.services.ticket_service import generate_ticket
 
 
 def calculate_is_win(entry: Entry, game: Game) -> bool | None:
@@ -78,6 +79,7 @@ def serialize_entry(entry: Entry) -> dict:
         "watched_team": entry.watched_team,
         "memo": entry.memo,
         "diary_text": entry.diary_text,
+        "ticket_image_url": entry.ticket_image_url,
         "is_win": calculate_is_win(entry, game) if game else None,
         "mission_success_count": sum(1 for mission in entry.missions if mission.is_completed),
         "missions": missions,
@@ -116,6 +118,9 @@ def create_entry(db: Session, payload: EntryCreate) -> dict:
         )
         db.add(mission)
 
+    db.commit()
+    entry.ticket_image_url = generate_ticket(entry, game)
+    db.add(entry)
     db.commit()
 
     return get_entry_by_id(db, entry.id)
