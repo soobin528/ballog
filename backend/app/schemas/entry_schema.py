@@ -30,6 +30,7 @@ class EntryResponse(BaseModel):
     game_id: int
     watched_team: str
     memo: str | None
+    diary_text: str | None
     is_win: bool | None
     mission_success_count: int
     missions: list[EntryMissionResponse]

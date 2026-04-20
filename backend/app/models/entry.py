@@ -13,6 +13,7 @@ class Entry(Base):
     game_id = Column(Integer, ForeignKey("games.id"), nullable=False)
     watched_team = Column(String(100), nullable=False)
     memo = Column(Text, nullable=True)
+    diary_text = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
