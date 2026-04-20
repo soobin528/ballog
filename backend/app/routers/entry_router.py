@@ -1,72 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy.orm import Session, joinedload
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.entry import Entry
+from app.schemas.entry_schema import EntryCreate, EntryResponse
+from app.services import entry_service
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
-
-class EntryCreate(BaseModel):
-    user_id: int
-    game_id: int
-    watched_team: str
-    memo: str | None = None
-
-
-@router.post("")
+@router.post("", response_model=EntryResponse)
 def create_entry(payload: EntryCreate, db: Session = Depends(get_db)):
-    entry = Entry(
-        user_id=payload.user_id,
-        game_id=payload.game_id,
-        watched_team=payload.watched_team,
-        memo=payload.memo,
-    )
-    db.add(entry)
-    db.commit()
-    db.refresh(entry)
-
-    return {
-        "id": entry.id,
-        "user_id": entry.user_id,
-        "game_id": entry.game_id,
-        "watched_team": entry.watched_team,
-        "memo": entry.memo,
-        "missions": [],
-        "created_at": entry.created_at,
-        "updated_at": entry.updated_at,
-    }
+    return entry_service.create_entry(db, payload)
 
 
-@router.get("/{entry_id}")
+@router.get("/{entry_id}", response_model=EntryResponse)
 def get_entry(entry_id: int, db: Session = Depends(get_db)):
-    entry = (
-        db.query(Entry)
-        .options(joinedload(Entry.missions))
-        .filter(Entry.id == entry_id)
-        .first()
-    )
+    return entry_service.get_entry_by_id(db, entry_id)
 
-    if entry is None:
-        raise HTTPException(status_code=404, detail="Entry not found")
 
-    return {
-        "id": entry.id,
-        "user_id": entry.user_id,
-        "game_id": entry.game_id,
-        "watched_team": entry.watched_team,
-        "memo": entry.memo,
-        "missions": [
-            {
-                "id": mission.id,
-                "title": mission.title,
-                "is_completed": mission.is_completed,
-                "created_at": mission.created_at,
-                "updated_at": mission.updated_at,
-            }
-            for mission in entry.missions
-        ],
-        "created_at": entry.created_at,
-        "updated_at": entry.updated_at,
-    }
+@router.get("", response_model=list[EntryResponse])
+def list_entries(
+    user_id: int | None = None,
+    game_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    return entry_service.list_entries(db, user_id=user_id, game_id=game_id)

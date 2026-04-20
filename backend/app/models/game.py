@@ -13,6 +13,9 @@ class Game(Base):
     away_team = Column(String(100), nullable=False)
     venue = Column(String(255), nullable=True)
     game_date = Column(DateTime(timezone=True), nullable=False)
+    home_score = Column(Integer, nullable=True)
+    away_score = Column(Integer, nullable=True)
+    status = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
