@@ -24,7 +24,7 @@ export function PageShell({ children, className }: PageShellProps) {
 
   const navItems: NavItem[] = [
     { label: "홈", href: "/", icon: "⌂", active: pathname === "/" },
-    { label: "일정", href: "#", icon: "◫", disabled: true },
+    { label: "일정", href: "/diary", icon: "◫", active: pathname === "/diary" },
     { label: "기록", href: "/create", icon: "+", active: pathname === "/create", primary: true },
     {
       label: "티켓",
