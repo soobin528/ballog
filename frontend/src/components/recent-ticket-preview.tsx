@@ -1,9 +1,8 @@
 import Link from "next/link";
 
 import type { Entry } from "@/lib/api";
-import { TicketCard } from "@/components/ticket-card";
-import { SectionHeading } from "@/components/section-heading";
 import { InlineState } from "@/components/inline-state";
+import { TicketCard } from "@/components/ticket-card";
 
 type RecentTicketPreviewProps = {
   entries: Entry[];
@@ -15,12 +14,12 @@ export function RecentTicketPreview({
   error,
 }: RecentTicketPreviewProps) {
   return (
-    <section className="content-card">
-      <SectionHeading
-        eyebrow="RECENT TICKETS"
-        title="최근 기록한 직관 티켓"
-        description="방금 만든 티켓이 컬렉션에 어떻게 쌓이는지 미리 확인해보세요."
-      />
+    <section className="content-card recent-preview">
+      <div className="recent-preview__header">
+        <span className="recent-preview__eyebrow">RECENT TICKETBOOK</span>
+        <h2>최근 직관 티켓</h2>
+        <p>방금 만든 티켓들이 티켓북에 꽂히듯 차곡차곡 쌓여요.</p>
+      </div>
 
       {error ? (
         <InlineState
@@ -30,14 +29,14 @@ export function RecentTicketPreview({
         />
       ) : entries.length > 0 ? (
         <>
-          <div className="ticket-grid ticket-grid--compact">
+          <div className="ticket-grid ticket-grid--compact recent-preview__grid">
             {entries.map((entry) => (
               <TicketCard key={entry.id} entry={entry} href={`/entries/${entry.id}`} />
             ))}
           </div>
-          <div className="section-footer">
-            <Link className="button button--ghost" href="/collection">
-              전체 컬렉션 보기
+          <div className="section-footer recent-preview__footer">
+            <Link className="button button--ghost recent-preview__button" href="/collection">
+              전체 티켓북 보기
             </Link>
           </div>
         </>

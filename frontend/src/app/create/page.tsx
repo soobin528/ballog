@@ -19,7 +19,7 @@ export default async function CreatePage() {
     }
 
     return (
-      <PageShell>
+      <PageShell className="page-shell--create">
         <CreateEntryForm games={games} users={users} />
       </PageShell>
     );
@@ -30,7 +30,7 @@ export default async function CreatePage() {
         : "폼 데이터를 불러오지 못했습니다.";
 
     return (
-      <PageShell>
+      <PageShell className="page-shell--create">
         <InlineState
           tone="error"
           title="입력 폼을 준비하지 못했어요."
