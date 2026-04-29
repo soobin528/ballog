@@ -3,16 +3,20 @@ import Link from "next/link";
 import { InlineState } from "@/components/inline-state";
 import { PageShell } from "@/components/page-shell";
 import { SectionHeading } from "@/components/section-heading";
-import { TicketCard } from "@/components/ticket-card";
-import { fetchEntries } from "@/lib/api";
+import { fetchEntries, fetchGames } from "@/lib/api";
+import { TicketList } from "./ticket-list";
 
 export default async function CollectionPage() {
   try {
-    const entries = (await fetchEntries()).slice().reverse();
+    const [entriesData, games] = await Promise.all([fetchEntries(), fetchGames()]);
+    const entries = entriesData.slice().reverse();
 
     return (
-      <PageShell>
-        <section className="content-card">
+      <PageShell className="page-shell--collection">
+        <section className="collection-page">
+          <Link className="collection-back" href="/">
+            ← 뒤로가기
+          </Link>
           <SectionHeading
             eyebrow="COLLECTION"
             title="내 직관 티켓 컬렉션"
@@ -20,15 +24,7 @@ export default async function CollectionPage() {
           />
 
           {entries.length > 0 ? (
-            <div className="ticket-grid">
-              {entries.map((entry) => (
-                <TicketCard
-                  key={entry.id}
-                  entry={entry}
-                  href={`/entries/${entry.id}`}
-                />
-              ))}
-            </div>
+            <TicketList entries={entries} games={games} />
           ) : (
             <InlineState
               title="아직 모인 티켓이 없어요."
