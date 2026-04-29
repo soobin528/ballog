@@ -32,7 +32,7 @@ export function PageShell({ children, className }: PageShellProps) {
       icon: "▭",
       active: pathname === "/collection" || pathname.startsWith("/entries/"),
     },
-    { label: "MY", href: "#", icon: "◌", disabled: true },
+    { label: "MY", href: "/my", icon: "◌", active: pathname === "/my" },
   ] as const;
 
   return (

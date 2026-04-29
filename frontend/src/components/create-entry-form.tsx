@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { CreateEntryPayload, Game, User } from "@/lib/api";
-import { createEntry } from "@/lib/api";
+import { createEntry, createGame } from "@/lib/api";
+import {
+  getTeamByStadium,
+  KBO_STADIUMS,
+  KBO_TEAM_NAMES,
+  normalizeStadiumName,
+  normalizeTeamName,
+} from "@/lib/kbo";
 import { InlineState } from "@/components/inline-state";
 
 type CreateEntryFormProps = {
@@ -26,16 +33,42 @@ const PRESET_MISSIONS = [
   "좌석 시야 기록하기",
 ] as const;
 
+function toDateInputValue(value?: string) {
+  if (!value) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function toNullableScore(value: string) {
+  if (value.trim().length === 0) {
+    return null;
+  }
+
+  const score = Number(value);
+  return Number.isNaN(score) ? null : score;
+}
+
 export function CreateEntryForm({
   users,
   games,
   initialError,
 }: CreateEntryFormProps) {
   const router = useRouter();
-  const [userId, setUserId] = useState<number | "">(users[0]?.id ?? "");
-  const [gameId, setGameId] = useState<number | "">(games[0]?.id ?? "");
-  const [watchedTeam, setWatchedTeam] = useState("");
+  const [userId] = useState<number | "">(users[0]?.id ?? "");
+  const [gameId, setGameId] = useState<number | "">("");
+  const [selectedDate, setSelectedDate] = useState(toDateInputValue());
+  const [selectedStadium, setSelectedStadium] = useState(KBO_STADIUMS[0] ?? "");
+  const [selectedHomeTeam, setSelectedHomeTeam] = useState(KBO_TEAM_NAMES[0] ?? "");
+  const [selectedAwayTeam, setSelectedAwayTeam] = useState(KBO_TEAM_NAMES[1] ?? "");
+  const [watchedTeam, setWatchedTeam] = useState(KBO_TEAM_NAMES[0] ?? "");
   const [memo, setMemo] = useState("");
+  const [weather, setWeather] = useState("");
+  const [seat, setSeat] = useState("");
+  const [companion, setCompanion] = useState("");
+  const [displayHomeScore, setDisplayHomeScore] = useState("0");
+  const [displayAwayScore, setDisplayAwayScore] = useState("0");
   const [missions, setMissions] = useState<MissionDraft[]>([
     { title: "응원 포인트 남기기", is_completed: true },
     { title: "기억에 남는 장면 체크", is_completed: false },
@@ -47,34 +80,97 @@ export function CreateEntryForm({
     () => games.find((game) => game.id === gameId) ?? null,
     [gameId, games],
   );
+  const stadiumOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...KBO_STADIUMS,
+          ...games
+            .map((game) => game.stadium)
+            .map((stadium) => normalizeStadiumName(stadium))
+            .filter(Boolean),
+        ]),
+      ),
+    [games],
+  );
+  const teamOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...KBO_TEAM_NAMES,
+          ...games.flatMap((game) => [
+            normalizeTeamName(game.home_team),
+            normalizeTeamName(game.away_team),
+          ]),
+        ]),
+      ),
+    [games],
+  );
 
   useEffect(() => {
-    if (!selectedGame) {
-      setWatchedTeam("");
+    if (watchedTeam !== selectedHomeTeam && watchedTeam !== selectedAwayTeam) {
+      setWatchedTeam(selectedHomeTeam);
+    }
+  }, [selectedAwayTeam, selectedHomeTeam, watchedTeam]);
+
+  useEffect(() => {
+    const matchedGame = games.find((game) => {
+      const gameDate = toDateInputValue(game.game_date);
+
+      return (
+        gameDate === selectedDate &&
+        normalizeStadiumName(game.stadium) === selectedStadium &&
+        normalizeTeamName(game.home_team) === selectedHomeTeam &&
+        normalizeTeamName(game.away_team) === selectedAwayTeam
+      );
+    });
+
+    if (!matchedGame) {
+      setGameId("");
       return;
     }
 
-    if (
-      watchedTeam !== selectedGame.home_team &&
-      watchedTeam !== selectedGame.away_team
-    ) {
-      setWatchedTeam(selectedGame.home_team);
-    }
-  }, [selectedGame, watchedTeam]);
+    setGameId(matchedGame.id);
+    setDisplayHomeScore(String(matchedGame.home_score ?? 0));
+    setDisplayAwayScore(String(matchedGame.away_score ?? 0));
+  }, [games, selectedAwayTeam, selectedDate, selectedHomeTeam, selectedStadium]);
 
-  const canSubmit = Boolean(userId && gameId && watchedTeam);
-  const selectedGameDate = selectedGame
-    ? new Intl.DateTimeFormat("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(new Date(selectedGame.game_date))
-    : "경기를 선택하면 날짜가 보여요";
-  const selectedStadium = selectedGame?.stadium ?? "경기장 정보 없음";
-  const homeTeam = selectedGame?.home_team ?? "선택";
-  const awayTeam = selectedGame?.away_team ?? "선택";
-  const homeScore = selectedGame?.home_score ?? 0;
-  const awayScore = selectedGame?.away_score ?? 0;
+  const canSubmit = Boolean(
+    userId &&
+      selectedDate &&
+      selectedStadium &&
+      selectedHomeTeam &&
+      selectedAwayTeam &&
+      selectedHomeTeam !== selectedAwayTeam &&
+      watchedTeam,
+  );
+  const homeScore = toNullableScore(displayHomeScore);
+  const awayScore = toNullableScore(displayAwayScore);
+  const gameUsesSelectedLabels = Boolean(
+    selectedGame &&
+      selectedGame.stadium === selectedStadium &&
+      selectedGame.home_team === selectedHomeTeam &&
+      selectedGame.away_team === selectedAwayTeam,
+  );
+  const scoreChanged = Boolean(
+    selectedGame &&
+      (selectedGame.home_score !== homeScore || selectedGame.away_score !== awayScore),
+  );
+  const needsNewGame = !selectedGame || !gameUsesSelectedLabels || scoreChanged;
+
+  const handleStadiumChange = (stadium: string) => {
+    const stadiumTeam = getTeamByStadium(stadium);
+    setSelectedStadium(stadium);
+
+    if (!stadiumTeam) {
+      return;
+    }
+
+    setSelectedHomeTeam(stadiumTeam.name);
+    if (selectedAwayTeam === stadiumTeam.name) {
+      setSelectedAwayTeam(teamOptions.find((team) => team !== stadiumTeam.name) ?? "");
+    }
+  };
 
   const updateMission = (
     index: number,
@@ -112,28 +208,44 @@ export function CreateEntryForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!userId || !gameId || !watchedTeam) {
-      setSubmitError("사용자, 경기, 응원 팀을 모두 선택해주세요.");
+    if (!canSubmit || typeof userId !== "number") {
+      setSubmitError("날짜, 경기장, 홈팀, 원정팀, 응원 팀을 모두 선택해주세요.");
       return;
     }
 
     setSubmitting(true);
     setSubmitError(null);
 
-    const payload: CreateEntryPayload = {
-      user_id: userId,
-      game_id: gameId,
-      watched_team: watchedTeam,
-      memo,
-      missions: missions
-        .filter((mission) => mission.title.trim().length > 0)
-        .map((mission) => ({
-          title: mission.title.trim(),
-          is_completed: mission.is_completed,
-        })),
-    };
-
     try {
+      let entryGameId = typeof gameId === "number" && !needsNewGame ? gameId : null;
+
+      if (!entryGameId) {
+        const createdGame = await createGame({
+          game_date: new Date(`${selectedDate}T18:30:00`).toISOString(),
+          stadium: selectedStadium,
+          home_team: selectedHomeTeam,
+          away_team: selectedAwayTeam,
+          home_score: homeScore,
+          away_score: awayScore,
+          status: "기록 완료",
+        });
+
+        entryGameId = createdGame.id;
+      }
+
+      const payload: CreateEntryPayload = {
+        user_id: userId,
+        game_id: entryGameId,
+        watched_team: watchedTeam,
+        memo,
+        missions: missions
+          .filter((mission) => mission.title.trim().length > 0)
+          .map((mission) => ({
+            title: mission.title.trim(),
+            is_completed: mission.is_completed,
+          })),
+      };
+
       const created = await createEntry(payload);
       router.push(`/entries/${created.id}`);
     } catch (error) {
@@ -147,7 +259,7 @@ export function CreateEntryForm({
   return (
     <form className="form-card create-form" onSubmit={handleSubmit}>
       <div className="create-form__header">
-        <span className="create-form__eyebrow">GAME RECORD</span>
+        <span className="create-form__eyebrow">경기 기록</span>
         <h1>경기 정보를 입력하세요</h1>
         <p>차근차근 적으면 직관 티켓이 완성돼요.</p>
         <button
@@ -164,153 +276,154 @@ export function CreateEntryForm({
         {submitError ? (
           <InlineState
             tone="error"
-            title="저장에 실패했어요."
+            title="티켓 생성에 실패했어요."
             description={submitError}
           />
         ) : null}
 
         <section className="create-panel create-panel--step-one create-panel--compact">
           <div className="create-step-card__header">
-            <span className="create-step-card__eyebrow">STEP 1</span>
-            <strong>기록자와 경기 선택</strong>
+            <span className="create-step-card__eyebrow">1단계</span>
+            <strong>경기 날짜</strong>
           </div>
 
-          <div className="create-step-card__grid">
-            <label className="field">
-              <span className="create-label">👤 기록자</span>
-              <select
-                className="create-input"
-                value={userId}
-                onChange={(event) => setUserId(Number(event.target.value))}
-              >
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nickname} {user.favorite_team ? `· ${user.favorite_team}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field">
-              <span className="create-label">🗂️ 경기 선택</span>
-              <select
-                className="create-input"
-                value={gameId}
-                onChange={(event) => setGameId(Number(event.target.value))}
-              >
-                {games.map((game) => (
-                  <option key={game.id} value={game.id}>
-                    {game.home_team} vs {game.away_team}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <label className="field">
+            <span className="create-label">경기 날짜</span>
+            <input
+              className="create-input"
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+            />
+          </label>
         </section>
 
         <section className="create-panel create-panel--field">
           <div className="create-step-card__header">
-            <span className="create-label">📅 경기 날짜</span>
+            <span className="create-label">경기장</span>
           </div>
-          <div className="create-input create-input--readonly">{selectedGameDate}</div>
-        </section>
-
-        <section className="create-panel create-panel--field">
-          <div className="create-step-card__header">
-            <span className="create-label">🏟️ 경기장</span>
-          </div>
-          <div className="create-input create-input--readonly">{selectedStadium}</div>
+          <select
+            className="create-input"
+            value={selectedStadium}
+            onChange={(event) => handleStadiumChange(event.target.value)}
+          >
+            {stadiumOptions.map((stadium) => (
+              <option key={stadium} value={stadium}>
+                {stadium}
+              </option>
+            ))}
+          </select>
         </section>
 
         <div className="create-team-grid">
           <section className="create-panel create-panel--home">
             <div className="create-step-card__header">
-              <span className="create-label">🏠 홈팀</span>
+              <span className="create-label">홈팀</span>
             </div>
-            <div className="create-input create-input--readonly">{homeTeam}</div>
+            <select
+              className="create-input"
+              value={selectedHomeTeam}
+              onChange={(event) => setSelectedHomeTeam(event.target.value)}
+            >
+              {teamOptions.map((team) => (
+                <option key={team} value={team}>
+                  {team}
+                </option>
+              ))}
+            </select>
           </section>
 
           <section className="create-panel create-panel--away">
             <div className="create-step-card__header">
-              <span className="create-label">✈️ 원정팀</span>
+              <span className="create-label">원정팀</span>
             </div>
-            <div className="create-input create-input--readonly">{awayTeam}</div>
+            <select
+              className="create-input"
+              value={selectedAwayTeam}
+              onChange={(event) => setSelectedAwayTeam(event.target.value)}
+            >
+              {teamOptions.map((team) => (
+                <option key={team} value={team}>
+                  {team}
+                </option>
+              ))}
+            </select>
           </section>
         </div>
 
         <section className="create-panel create-panel--score">
           <div className="create-step-card__header">
-            <span className="create-label">🎯 최종 점수</span>
+            <span className="create-label">최종 점수</span>
           </div>
 
           <div className="create-score-grid">
             <div className="create-score-col">
               <span className="create-score-col__label">홈팀</span>
-              <div className="create-input create-input--readonly create-input--score">
-                {homeScore}
-              </div>
+              <input
+                className="create-input create-input--score"
+                inputMode="numeric"
+                onChange={(event) => setDisplayHomeScore(event.target.value)}
+                value={displayHomeScore}
+              />
             </div>
             <div className="create-score-col">
               <span className="create-score-col__label">원정팀</span>
-              <div className="create-input create-input--readonly create-input--score">
-                {awayScore}
-              </div>
+              <input
+                className="create-input create-input--score"
+                inputMode="numeric"
+                onChange={(event) => setDisplayAwayScore(event.target.value)}
+                value={displayAwayScore}
+              />
             </div>
           </div>
         </section>
 
         <section className="create-panel create-panel--team">
           <div className="create-step-card__header">
-            <span className="create-step-card__eyebrow">STEP 2</span>
+            <span className="create-step-card__eyebrow">2단계</span>
             <strong>내가 응원한 팀</strong>
           </div>
 
           <label className="field">
-            <span className="create-label">❤️ 응원 팀 선택</span>
+            <span className="create-label">응원 팀 선택</span>
             <select
               className="create-input"
               value={watchedTeam}
               onChange={(event) => setWatchedTeam(event.target.value)}
             >
-              {selectedGame ? (
-                <>
-                  <option value={selectedGame.home_team}>{selectedGame.home_team}</option>
-                  <option value={selectedGame.away_team}>{selectedGame.away_team}</option>
-                </>
-              ) : (
-                <option value="">경기를 먼저 선택해주세요</option>
-              )}
+              <option value={selectedHomeTeam}>{selectedHomeTeam}</option>
+              <option value={selectedAwayTeam}>{selectedAwayTeam}</option>
             </select>
           </label>
+          {selectedHomeTeam === selectedAwayTeam ? (
+            <p className="create-form__hint">홈팀과 원정팀은 서로 달라야 해요.</p>
+          ) : null}
+          {needsNewGame ? (
+            <p className="create-form__hint">선택한 조합으로 새 경기 정보를 함께 저장합니다.</p>
+          ) : null}
         </section>
 
-        <section className="create-panel create-panel--utility-row">
-          <div className="create-utility-grid">
-            <div className="create-utility-card">
-              <span className="create-label">🌤️ 날씨</span>
-              <div className="create-utility-placeholder">선택</div>
-            </div>
-            <div className="create-utility-card">
-              <span className="create-label">💺 좌석</span>
-              <div className="create-utility-placeholder">예: 3루 207</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="create-panel">
+        <section className="create-panel create-panel--memo create-panel--diary">
           <div className="create-step-card__header">
-            <span className="create-step-card__eyebrow">동행인</span>
-            <strong>동행인</strong>
+            <span className="create-step-card__eyebrow">다이어리</span>
+            <strong>오늘의 직관 다이어리</strong>
           </div>
 
-          <div className="create-utility-placeholder create-utility-placeholder--wide">
-            예: 친구, 가족, 혼자
-          </div>
+          <label className="field">
+            <span className="create-label">오늘의 감정과 장면</span>
+            <textarea
+              className="create-input create-textarea"
+              rows={5}
+              placeholder="인상 깊었던 순간, 응원 분위기, 오늘의 감정을 적어주세요."
+              value={memo}
+              onChange={(event) => setMemo(event.target.value)}
+            />
+          </label>
         </section>
 
         <section className="create-panel create-panel--mission">
           <div className="create-step-card__header">
-            <span className="create-step-card__eyebrow">STEP 3</span>
+            <span className="create-step-card__eyebrow">선택</span>
             <strong>오늘의 미션</strong>
           </div>
 
@@ -366,22 +479,45 @@ export function CreateEntryForm({
           </div>
         </section>
 
-        <section className="create-panel create-panel--memo">
+        <section className="create-panel create-panel--utility-row">
           <div className="create-step-card__header">
-            <span className="create-step-card__eyebrow">오늘의 기록</span>
-            <strong>오늘의 메모</strong>
+            <span className="create-step-card__eyebrow">선택</span>
+            <strong>선택 정보</strong>
           </div>
-
-          <label className="field">
-            <span className="create-label">📝 인상 깊었던 순간</span>
-            <textarea
-              className="create-input create-textarea"
-              rows={5}
-              placeholder="인상 깊었던 순간, 응원 분위기 등을 자유롭게 적어주세요."
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-            />
-          </label>
+          <div className="create-utility-grid create-utility-grid--optional">
+            <label className="create-utility-card">
+              <span className="create-label">날씨</span>
+              <select
+                className="create-input create-input--compact"
+                value={weather}
+                onChange={(event) => setWeather(event.target.value)}
+              >
+                <option value="">선택</option>
+                <option value="맑음">맑음</option>
+                <option value="흐림">흐림</option>
+                <option value="비">비</option>
+                <option value="쌀쌀함">쌀쌀함</option>
+              </select>
+            </label>
+            <label className="create-utility-card">
+              <span className="create-label">좌석</span>
+              <input
+                className="create-input create-input--compact"
+                placeholder="예: 3루 207"
+                value={seat}
+                onChange={(event) => setSeat(event.target.value)}
+              />
+            </label>
+            <label className="create-utility-card create-utility-card--wide">
+              <span className="create-label">동행인</span>
+              <input
+                className="create-input create-input--compact"
+                placeholder="예: 친구, 가족, 혼자"
+                value={companion}
+                onChange={(event) => setCompanion(event.target.value)}
+              />
+            </label>
+          </div>
         </section>
 
         <div className="create-actions">
@@ -397,7 +533,7 @@ export function CreateEntryForm({
             disabled={!canSubmit || submitting}
             type="submit"
           >
-            {submitting ? "기록 저장 중..." : "🎟️ 티켓 생성"}
+            {submitting ? "기록 저장 중..." : "티켓 생성"}
           </button>
         </div>
       </div>

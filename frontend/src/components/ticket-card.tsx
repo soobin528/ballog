@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 
 import type { Entry, Game } from "@/lib/api";
 import { formatDate, formatScore } from "@/lib/format";
+import { getTeamColors } from "@/lib/kbo";
 
 type TicketCardProps = {
   entry: Entry;
@@ -43,7 +44,7 @@ function getOpponent(entry: Entry, game?: Game | null) {
 }
 
 function getWatchedScore(entry: Entry, game?: Game | null) {
-  if (!game || game.home_score === null || game.away_score === null) {
+  if (!game || game.home_score == null || game.away_score == null) {
     return "-";
   }
 
@@ -53,7 +54,7 @@ function getWatchedScore(entry: Entry, game?: Game | null) {
 }
 
 function getOpponentScore(entry: Entry, game?: Game | null) {
-  if (!game || game.home_score === null || game.away_score === null) {
+  if (!game || game.home_score == null || game.away_score == null) {
     return "-";
   }
 
@@ -71,7 +72,7 @@ function getTicketResult(entry: Entry, game?: Game | null) {
     return "LOSE";
   }
 
-  if (!game || game.home_score === null || game.away_score === null) {
+  if (!game || game.home_score == null || game.away_score == null) {
     return "READY";
   }
 
@@ -85,11 +86,20 @@ function getTicketResult(entry: Entry, game?: Game | null) {
   return watchedScore > opponentScore ? "WIN" : "LOSE";
 }
 
+function getTicketResultLabel(result: string) {
+  if (result === "WIN") {
+    return "승리";
+  }
+
+  if (result === "LOSE") {
+    return "패배";
+  }
+
+  return "예정";
+}
+
 function getTicketStyle(entry: Entry, result: string) {
-  const colors = TEAM_COLORS[entry.watched_team] ?? {
-    primary: "#8E0012",
-    secondary: "#F2C230",
-  };
+  const colors = TEAM_COLORS[entry.watched_team] ?? getTeamColors(entry.watched_team);
 
   return {
     "--ticket-team": colors.primary,
@@ -103,6 +113,7 @@ function getTicketStyle(entry: Entry, result: string) {
 export function TicketCard({ entry, game, href, variant = "card" }: TicketCardProps) {
   const opponent = getOpponent(entry, game);
   const result = getTicketResult(entry, game);
+  const resultLabel = getTicketResultLabel(result);
   const ticketStyle = getTicketStyle(entry, result);
   const venue = game?.stadium ?? "경기장 미정";
   const ticketDate = game?.game_date ?? entry.created_at;
@@ -128,19 +139,19 @@ export function TicketCard({ entry, game, href, variant = "card" }: TicketCardPr
         </div>
         <dl className="ticket-card__details">
           <div>
-            <dt>DATE</dt>
+            <dt>날짜</dt>
             <dd>{formatDate(ticketDate)}</dd>
           </div>
           <div>
-            <dt>MY TEAM</dt>
+            <dt>응원 팀</dt>
             <dd>{entry.watched_team}</dd>
           </div>
           <div>
-            <dt>OPPONENT</dt>
+            <dt>상대 팀</dt>
             <dd>{opponent}</dd>
           </div>
           <div>
-            <dt>VENUE</dt>
+            <dt>경기장</dt>
             <dd>{venue}</dd>
           </div>
         </dl>
@@ -151,19 +162,19 @@ export function TicketCard({ entry, game, href, variant = "card" }: TicketCardPr
         </div>
       </div>
       <div className="ticket-card__stub">
-        <div className="ticket-card__stamp">{result}</div>
+        <div className="ticket-card__stamp">{resultLabel}</div>
         <div className="ticket-card__stub-grid">
           <span>
-            <small>WEATHER</small>
+            <small>날씨</small>
             ☀️
           </span>
           <span>
-            <small>SEAT</small>
+            <small>좌석</small>
             FAN-{String(entry.id).padStart(3, "0")}
           </span>
         </div>
         <div className="ticket-card__mission">
-          <strong>MISSION</strong>
+          <strong>미션</strong>
           {mission ? (
             <span>
               {mission.is_completed ? "X" : "□"} {mission.title}
@@ -173,7 +184,7 @@ export function TicketCard({ entry, game, href, variant = "card" }: TicketCardPr
           )}
         </div>
         <div className="ticket-card__barcode" aria-hidden="true" />
-        <span className="ticket-card__number">TICKET #{String(entry.id).padStart(6, "0")}</span>
+        <span className="ticket-card__number">티켓 #{String(entry.id).padStart(6, "0")}</span>
       </div>
     </article>
   );

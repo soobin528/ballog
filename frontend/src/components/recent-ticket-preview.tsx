@@ -1,18 +1,22 @@
 import Link from "next/link";
 
-import type { Entry } from "@/lib/api";
+import type { Entry, Game } from "@/lib/api";
 import { InlineState } from "@/components/inline-state";
 import { TicketCard } from "@/components/ticket-card";
 
 type RecentTicketPreviewProps = {
   entries: Entry[];
   error?: string | null;
+  games?: Game[];
 };
 
 export function RecentTicketPreview({
   entries,
   error,
+  games = [],
 }: RecentTicketPreviewProps) {
+  const gameById = new Map(games.map((game) => [game.id, game]));
+
   return (
     <section className="content-card recent-preview">
       <div className="recent-preview__header">
@@ -31,7 +35,12 @@ export function RecentTicketPreview({
         <>
           <div className="ticket-grid ticket-grid--compact recent-preview__grid">
             {entries.map((entry) => (
-              <TicketCard key={entry.id} entry={entry} href={`/entries/${entry.id}`} />
+              <TicketCard
+                key={entry.id}
+                entry={entry}
+                game={gameById.get(entry.game_id)}
+                href={`/entries/${entry.id}`}
+              />
             ))}
           </div>
           <div className="section-footer recent-preview__footer">

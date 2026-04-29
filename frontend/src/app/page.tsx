@@ -3,16 +3,18 @@ import Link from "next/link";
 import { HeroSection } from "@/components/hero-section";
 import { PageShell } from "@/components/page-shell";
 import { RecentTicketPreview } from "@/components/recent-ticket-preview";
-import { type Entry, fetchEntries } from "@/lib/api";
+import { type Entry, type Game, fetchEntries, fetchGames } from "@/lib/api";
 
 export default async function HomePage() {
   let entries: Entry[] = [];
+  let games: Game[] = [];
   let recentEntries: Entry[] = [];
   let error: string | null = null;
 
   try {
-    const data = await fetchEntries();
+    const [data, gamesData] = await Promise.all([fetchEntries(), fetchGames()]);
     entries = data;
+    games = gamesData;
     recentEntries = data.slice(-3).reverse();
   } catch (caughtError) {
     error =
@@ -86,7 +88,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      <RecentTicketPreview entries={recentEntries} error={error} />
+      <RecentTicketPreview entries={recentEntries} error={error} games={games} />
     </PageShell>
   );
 }

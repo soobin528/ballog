@@ -54,6 +54,16 @@ export type CreateEntryPayload = {
   }>;
 };
 
+export type CreateGamePayload = {
+  game_date: string;
+  stadium: string | null;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string | null;
+};
+
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 export function getApiBaseUrl() {
@@ -131,6 +141,13 @@ export async function fetchEntry(entryId: string | number) {
 
 export async function fetchGame(gameId: string | number) {
   return request<Game>(`/games/${gameId}`);
+}
+
+export async function createGame(payload: CreateGamePayload) {
+  return request<Game>("/games", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function createEntry(payload: CreateEntryPayload) {
