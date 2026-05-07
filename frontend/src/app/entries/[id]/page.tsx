@@ -1,10 +1,9 @@
-import Link from "next/link";
-
 import { InlineState } from "@/components/inline-state";
 import { PageShell } from "@/components/page-shell";
-import { TicketCard } from "@/components/ticket-card";
-import { fetchEntry, fetchGame, getAssetUrl } from "@/lib/api";
+import { fetchEntry, fetchGame } from "@/lib/api";
 import { formatDate, formatScore, getGameSummary } from "@/lib/format";
+
+import { ResultTicketActions } from "./result-ticket-actions";
 
 type ResultPageProps = {
   params: {
@@ -33,25 +32,15 @@ export default async function ResultPage({ params }: ResultPageProps) {
         <section className="result-created">
           <div className="result-created__hero">
             <span className="result-created__icon">🎟️</span>
-            <span className="section-heading__eyebrow">TICKET CREATED!</span>
+            <span className="section-heading__eyebrow">티켓 생성 완료</span>
             <h1>티켓이 생성되었습니다</h1>
             <p>{entry.watched_team}의 오늘 직관을 Ballog 티켓으로 저장했어요.</p>
           </div>
 
-          <article className="result-ticket-stage" aria-label="생성된 티켓">
-            <TicketCard entry={entry} game={game} variant="large" />
-            {entry.ticket_image_url ? (
-              <a
-                className="ticket-card__fallback-link"
-                href={getAssetUrl(entry.ticket_image_url) ?? "#"}
-              >
-                생성된 이미지 보기
-              </a>
-            ) : null}
-          </article>
+          <ResultTicketActions entry={entry} game={game} />
 
           <article className="result-card result-card--info">
-            <span className="section-heading__eyebrow">GAME INFO</span>
+            <span className="section-heading__eyebrow">경기 정보</span>
             <h2>{getGameSummary(game)}</h2>
             <dl className="summary-list">
               <div>
@@ -82,31 +71,16 @@ export default async function ResultPage({ params }: ResultPageProps) {
           </article>
 
           <article className="result-card result-card--diary">
-            <span className="section-heading__eyebrow">TODAY DIARY</span>
+            <span className="section-heading__eyebrow">오늘의 다이어리</span>
             <h2>오늘의 직관 일기</h2>
             <p className="result-diary">{entry.diary_text ?? entry.memo ?? "일기 문장이 아직 없어요."}</p>
           </article>
 
           <article className={`result-card result-card--result${entry.is_win === false ? " result-card--lose" : ""}`}>
-            <span className="section-heading__eyebrow">RESULT</span>
+            <span className="section-heading__eyebrow">경기 결과</span>
             <h2>{resultLabel}</h2>
             <p>{resultCopy}</p>
           </article>
-
-          <div className="result-actions result-actions--stacked">
-            <Link className="button button--primary button--wide" href="/collection">
-              컬렉션에서 모든 티켓 보기
-            </Link>
-            <button className="button button--ghost" type="button">
-              공유
-            </button>
-            <button className="button button--ghost" type="button">
-              저장
-            </button>
-            <Link className="button button--ghost button--wide" href="/">
-              홈으로 돌아가기
-            </Link>
-          </div>
         </section>
       </PageShell>
     );

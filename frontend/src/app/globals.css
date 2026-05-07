@@ -2478,6 +2478,18 @@ img {
   grid-column: 1 / -1;
 }
 
+.result-action-message {
+  margin: -0.35rem 0 0;
+  padding: 0.72rem 0.8rem;
+  border: 3px dashed rgba(154, 79, 19, 0.34);
+  border-radius: 12px;
+  background: #fffdf4;
+  color: var(--ballog-brown);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .summary-list {
   display: grid;
   gap: 0.85rem;
