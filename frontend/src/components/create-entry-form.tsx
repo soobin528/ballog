@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import type { CreateEntryPayload, Game, User } from "@/lib/api";
 import { createEntry, createGame } from "@/lib/api";
@@ -56,13 +56,15 @@ export function CreateEntryForm({
   initialError,
 }: CreateEntryFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialDate = searchParams.get("date");
   const [userId] = useState<number | "">(users[0]?.id ?? "");
   const [gameId, setGameId] = useState<number | "">("");
-  const [selectedDate, setSelectedDate] = useState(toDateInputValue());
-  const [selectedStadium, setSelectedStadium] = useState(KBO_STADIUMS[0] ?? "");
-  const [selectedHomeTeam, setSelectedHomeTeam] = useState(KBO_TEAM_NAMES[0] ?? "");
-  const [selectedAwayTeam, setSelectedAwayTeam] = useState(KBO_TEAM_NAMES[1] ?? "");
-  const [watchedTeam, setWatchedTeam] = useState(KBO_TEAM_NAMES[0] ?? "");
+  const [selectedDate, setSelectedDate] = useState(initialDate ?? toDateInputValue());
+  const [selectedStadium, setSelectedStadium] = useState("");
+  const [selectedHomeTeam, setSelectedHomeTeam] = useState("");
+  const [selectedAwayTeam, setSelectedAwayTeam] = useState("");
+  const [watchedTeam, setWatchedTeam] = useState("");
   const [memo, setMemo] = useState("");
   const [weather, setWeather] = useState("");
   const [seat, setSeat] = useState("");
@@ -108,6 +110,11 @@ export function CreateEntryForm({
   );
 
   useEffect(() => {
+    if (!selectedHomeTeam || !selectedAwayTeam) {
+      setWatchedTeam("");
+      return;
+    }
+
     if (watchedTeam !== selectedHomeTeam && watchedTeam !== selectedAwayTeam) {
       setWatchedTeam(selectedHomeTeam);
     }
@@ -307,6 +314,7 @@ export function CreateEntryForm({
             value={selectedStadium}
             onChange={(event) => handleStadiumChange(event.target.value)}
           >
+            <option value="">선택하기</option>
             {stadiumOptions.map((stadium) => (
               <option key={stadium} value={stadium}>
                 {stadium}
@@ -325,6 +333,7 @@ export function CreateEntryForm({
               value={selectedHomeTeam}
               onChange={(event) => setSelectedHomeTeam(event.target.value)}
             >
+              <option value="">선택하기</option>
               {teamOptions.map((team) => (
                 <option key={team} value={team}>
                   {team}
@@ -342,6 +351,7 @@ export function CreateEntryForm({
               value={selectedAwayTeam}
               onChange={(event) => setSelectedAwayTeam(event.target.value)}
             >
+              <option value="">선택하기</option>
               {teamOptions.map((team) => (
                 <option key={team} value={team}>
                   {team}
@@ -391,8 +401,13 @@ export function CreateEntryForm({
               value={watchedTeam}
               onChange={(event) => setWatchedTeam(event.target.value)}
             >
-              <option value={selectedHomeTeam}>{selectedHomeTeam}</option>
-              <option value={selectedAwayTeam}>{selectedAwayTeam}</option>
+              <option value="">선택하기</option>
+              {selectedHomeTeam ? (
+                <option value={selectedHomeTeam}>{selectedHomeTeam}</option>
+              ) : null}
+              {selectedAwayTeam ? (
+                <option value={selectedAwayTeam}>{selectedAwayTeam}</option>
+              ) : null}
             </select>
           </label>
           {selectedHomeTeam === selectedAwayTeam ? (

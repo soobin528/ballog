@@ -14,9 +14,6 @@ export default async function CollectionPage() {
     return (
       <PageShell className="page-shell--collection">
         <section className="collection-page">
-          <Link className="collection-back" href="/">
-            ← 뒤로가기
-          </Link>
           <SectionHeading
             eyebrow="COLLECTION"
             title="내 직관 티켓 컬렉션"

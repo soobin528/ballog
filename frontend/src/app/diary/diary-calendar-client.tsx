@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { Entry, Game } from "@/lib/api";
@@ -314,6 +315,10 @@ export function DiaryCalendarClient({
               <p className="diary-empty-note">등록된 경기 일정이 없어요.</p>
             )}
           </div>
+
+          <Link className="diary-record-link" href={`/create?date=${selectedDate}`}>
+            이 날짜로 직관 기록하기
+          </Link>
         </div>
       </section>
     </>

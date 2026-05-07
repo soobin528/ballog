@@ -11,68 +11,75 @@ type ResultTicketActionsProps = {
   game: Game;
 };
 
-function inlineComputedStyles(source: Element, target: Element) {
-  const computedStyle = window.getComputedStyle(source);
-  const styleText = Array.from(computedStyle)
-    .map((property) => `${property}:${computedStyle.getPropertyValue(property)};`)
-    .join("");
-
-  target.setAttribute("style", styleText);
-
-  Array.from(source.children).forEach((child, index) => {
-    const targetChild = target.children[index];
-    if (targetChild) {
-      inlineComputedStyles(child, targetChild);
-    }
-  });
+function getOpponent(entry: Entry, game: Game) {
+  return entry.watched_team === game.home_team ? game.away_team : game.home_team;
 }
 
-async function downloadTicketImage(element: HTMLElement, entryId: number) {
-  const rect = element.getBoundingClientRect();
-  const clone = element.cloneNode(true) as HTMLElement;
-  inlineComputedStyles(element, clone);
-  clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}" viewBox="0 0 ${rect.width} ${rect.height}">
-      <foreignObject width="100%" height="100%">${new XMLSerializer().serializeToString(clone)}</foreignObject>
-    </svg>
-  `;
-
-  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const svgUrl = URL.createObjectURL(svgBlob);
-
-  try {
-    const image = new Image();
-    image.decoding = "async";
-    const loaded = new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("티켓 이미지를 만들지 못했습니다."));
-    });
-    image.src = svgUrl;
-    await loaded;
-
-    const canvas = document.createElement("canvas");
-    const scale = Math.max(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(rect.width * scale);
-    canvas.height = Math.round(rect.height * scale);
-
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("이미지 저장을 지원하지 않는 브라우저입니다.");
-    }
-
-    context.scale(scale, scale);
-    context.drawImage(image, 0, 0, rect.width, rect.height);
-
-    const pngUrl = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = pngUrl;
-    link.download = `balllog-ticket-${entryId}.png`;
-    link.click();
-  } finally {
-    URL.revokeObjectURL(svgUrl);
+function getWatchedScore(entry: Entry, game: Game) {
+  if (game.home_score == null || game.away_score == null) {
+    return "-";
   }
+
+  return entry.watched_team === game.home_team
+    ? String(game.home_score)
+    : String(game.away_score);
+}
+
+function getOpponentScore(entry: Entry, game: Game) {
+  if (game.home_score == null || game.away_score == null) {
+    return "-";
+  }
+
+  return entry.watched_team === game.home_team
+    ? String(game.away_score)
+    : String(game.home_score);
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function createTicketSvg(entry: Entry, game: Game) {
+  const opponent = getOpponent(entry, game);
+  const diary = entry.diary_text ?? entry.memo ?? "오늘의 직관 기록";
+  const result = entry.is_win === true ? "승리" : entry.is_win === false ? "패배" : "기록";
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+    <rect width="1200" height="675" fill="#fff4d8"/>
+    <rect x="50" y="60" width="1100" height="555" rx="34" fill="#4b673f"/>
+    <rect x="72" y="82" width="1056" height="511" rx="28" fill="none" stroke="#fff8e8" stroke-width="4" opacity=".55"/>
+    <line x1="790" y1="100" x2="790" y2="575" stroke="#fff8e8" stroke-width="6" stroke-dasharray="16 16" opacity=".55"/>
+    <text x="100" y="150" fill="#fff8e8" font-size="46" font-weight="900" font-family="Arial, sans-serif">BALLLOG TICKET</text>
+    <text x="100" y="235" fill="#d7c8a4" font-size="24" font-weight="800" font-family="Arial, sans-serif">경기장</text>
+    <text x="100" y="278" fill="#fff8e8" font-size="38" font-weight="900" font-family="Arial, sans-serif">${escapeXml(game.stadium ?? "경기장 미정")}</text>
+    <text x="100" y="350" fill="#d7c8a4" font-size="24" font-weight="800" font-family="Arial, sans-serif">매치업</text>
+    <text x="100" y="393" fill="#fff8e8" font-size="36" font-weight="900" font-family="Arial, sans-serif">${escapeXml(entry.watched_team)} vs ${escapeXml(opponent)}</text>
+    <text x="100" y="465" fill="#d7c8a4" font-size="24" font-weight="800" font-family="Arial, sans-serif">스코어</text>
+    <text x="100" y="508" fill="#ffe28a" font-size="50" font-weight="900" font-family="Arial, sans-serif">${getWatchedScore(entry, game)} : ${getOpponentScore(entry, game)}</text>
+    <text x="100" y="565" fill="#fff8e8" font-size="24" font-weight="700" font-family="Arial, sans-serif">${escapeXml(diary.slice(0, 46))}</text>
+    <rect x="860" y="155" width="190" height="190" rx="24" fill="#fff8e8"/>
+    <text x="955" y="270" text-anchor="middle" fill="#4b673f" font-size="48" font-weight="900" font-family="Arial, sans-serif">${escapeXml(entry.watched_team.split(" ")[0])}</text>
+    <text x="955" y="430" text-anchor="middle" fill="#fff8e8" font-size="42" font-weight="900" font-family="Arial, sans-serif">${escapeXml(entry.watched_team)}</text>
+    <text x="955" y="480" text-anchor="middle" fill="#d7c8a4" font-size="26" font-weight="800" font-family="Arial, sans-serif">ENTRY #${entry.id}</text>
+    <rect x="865" y="515" width="180" height="58" rx="29" fill="#ffe046"/>
+    <text x="955" y="554" text-anchor="middle" fill="#5b361f" font-size="28" font-weight="900" font-family="Arial, sans-serif">${result}</text>
+  </svg>`;
+}
+
+function downloadTicketImage(entry: Entry, game: Game) {
+  const svgBlob = new Blob([createTicketSvg(entry, game)], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  const link = document.createElement("a");
+  link.href = svgUrl;
+  link.download = `balllog-ticket-${entry.id}.svg`;
+  link.click();
+  URL.revokeObjectURL(svgUrl);
 }
 
 export function ResultTicketActions({ entry, game }: ResultTicketActionsProps) {
@@ -108,8 +115,8 @@ export function ResultTicketActions({ entry, game }: ResultTicketActionsProps) {
     }
 
     try {
-      await downloadTicketImage(ticketRef.current, entry.id);
-      setMessage("화면의 티켓 이미지를 저장했어요.");
+      downloadTicketImage(entry, game);
+      setMessage("티켓 이미지를 SVG 파일로 저장했어요.");
     } catch (caughtError) {
       setMessage(
         caughtError instanceof Error

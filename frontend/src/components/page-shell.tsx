@@ -15,7 +15,6 @@ type NavItem = {
   icon: string;
   active?: boolean;
   disabled?: boolean;
-  primary?: boolean;
 };
 
 export function PageShell({ children, className }: PageShellProps) {
@@ -24,14 +23,14 @@ export function PageShell({ children, className }: PageShellProps) {
 
   const navItems: NavItem[] = [
     { label: "홈", href: "/", icon: "⌂", active: pathname === "/" },
-    { label: "일정", href: "/diary", icon: "◫", active: pathname === "/diary" },
-    { label: "기록", href: "/create", icon: "+", active: pathname === "/create", primary: true },
     {
       label: "티켓",
       href: "/collection",
       icon: "▭",
       active: pathname === "/collection" || pathname.startsWith("/entries/"),
     },
+    { label: "다이어리", href: "/diary", icon: "◫", active: pathname === "/diary" },
+    { label: "기록", href: "/create", icon: "✎", active: pathname === "/create" },
     { label: "MY", href: "/my", icon: "◌", active: pathname === "/my" },
   ] as const;
 
@@ -58,23 +57,19 @@ export function PageShell({ children, className }: PageShellProps) {
             item.disabled ? (
               <span
                 aria-disabled="true"
-                className={`bottom-nav__item${item.primary ? " bottom-nav__item--primary" : ""}`}
+                className="bottom-nav__item"
                 key={item.label}
               >
-                <span className="bottom-nav__icon">
-                  {item.primary ? <span className="bottom-nav__plus">+</span> : item.icon}
-                </span>
+                <span className="bottom-nav__icon">{item.icon}</span>
                 <span className="bottom-nav__label">{item.label}</span>
               </span>
             ) : (
               <Link
-                className={`bottom-nav__item${item.active ? " bottom-nav__item--active" : ""}${item.primary ? " bottom-nav__item--primary" : ""}`}
+                className={`bottom-nav__item${item.active ? " bottom-nav__item--active" : ""}`}
                 href={item.href}
                 key={item.label}
               >
-                <span className="bottom-nav__icon">
-                  {item.primary ? <span className="bottom-nav__plus">+</span> : item.icon}
-                </span>
+                <span className="bottom-nav__icon">{item.icon}</span>
                 <span className="bottom-nav__label">{item.label}</span>
               </Link>
             ),

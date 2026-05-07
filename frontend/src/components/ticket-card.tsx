@@ -117,7 +117,6 @@ export function TicketCard({ entry, game, href, variant = "card" }: TicketCardPr
   const ticketStyle = getTicketStyle(entry, result);
   const venue = game?.stadium ?? "경기장 미정";
   const ticketDate = game?.game_date ?? entry.created_at;
-  const mission = entry.missions[0];
   const content = (
     <article
       className={`ticket-card ticket-card--retro ticket-card--${result.toLowerCase()}${
@@ -165,26 +164,11 @@ export function TicketCard({ entry, game, href, variant = "card" }: TicketCardPr
         <div className="ticket-card__stamp">{resultLabel}</div>
         <div className="ticket-card__stub-grid">
           <span>
-            <small>날씨</small>
-            ☀️
-          </span>
-          <span>
             <small>좌석</small>
             FAN-{String(entry.id).padStart(3, "0")}
           </span>
         </div>
-        <div className="ticket-card__mission">
-          <strong>미션</strong>
-          {mission ? (
-            <span>
-              {mission.is_completed ? "X" : "□"} {mission.title}
-            </span>
-          ) : (
-            <span>□ 미션 없음</span>
-          )}
-        </div>
         <div className="ticket-card__barcode" aria-hidden="true" />
-        <span className="ticket-card__number">티켓 #{String(entry.id).padStart(6, "0")}</span>
       </div>
     </article>
   );
