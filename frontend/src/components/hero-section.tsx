@@ -15,11 +15,10 @@ export function HeroSection() {
       <div className="hero-intro-card">
         <div className="hero-intro-card__accent" />
         <div className="hero-intro-card__copy">
-          <h1>야구 직관의 추억을</h1>
-          <h2>빈티지 티켓으로 간직하세요</h2>
+          <h1>오늘의 직관을</h1>
+          <h2>다이어리로 남겨요</h2>
           <p>
-            경기, 응원팀, 오늘의 감정을 기록하면 나만의 직관 티켓이
-            만들어져요.
+            경기보다 오래 남는 장면과 감정을 먼저 기록하고, 티켓은 자연스럽게 따라오게요.
           </p>
         </div>
         <div className="hero-intro-card__stamp" aria-hidden="true" />
@@ -29,8 +28,8 @@ export function HeroSection() {
         <Link className="button button--primary" href="/create">
           오늘 직관 기록하기
         </Link>
-        <Link className="button button--ghost" href="/collection">
-          티켓 모아보기
+        <Link className="button button--ghost" href="/diary">
+          다이어리 보기
         </Link>
       </div>
     </section>

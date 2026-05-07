@@ -22,6 +22,7 @@ type WatchedEntryDate = {
   date: string;
   entry: Entry;
   game: Game;
+  diary: string;
   matchup: string;
   result: string;
   title: string;
@@ -129,6 +130,10 @@ export function DiaryCalendarClient({
             date: getApiDateKey(game.game_date),
             entry,
             game,
+            diary:
+              entry.diary_text ??
+              entry.memo ??
+              "아직 다이어리 내용이 없어요. 오늘의 장면을 조금 더 남겨보세요.",
             matchup: `${game.away_team} vs ${game.home_team}`,
             result: getGameResult(game),
             title: entry.diary_text ? "직관 다이어리" : `${entry.watched_team} 직관 기록`,
@@ -278,9 +283,9 @@ export function DiaryCalendarClient({
               <div className="diary-entry-list">
                 {selectedEntries.map((entry) => (
                   <article className="diary-entry-card" key={entry.entry.id}>
-                    <span>WATCHED</span>
+                    <span>{entry.matchup}</span>
                     <strong>{entry.title}</strong>
-                    <p>{entry.matchup}</p>
+                    <p>{entry.diary}</p>
                     <em>{entry.result}</em>
                   </article>
                 ))}
@@ -298,19 +303,11 @@ export function DiaryCalendarClient({
             {selectedSchedules.length > 0 ? (
               <div className="diary-schedule__list">
                 {selectedSchedules.map((game) => (
-                  <article className="diary-game-card" key={game.game.id}>
-                    <div className="diary-game-card__date">
-                      <strong>{selectedDay}</strong>
-                      <span>{game.time}</span>
-                    </div>
-                    <div className="diary-game-card__body">
-                      <div className="diary-game-card__topline">
-                        <strong>{game.matchup}</strong>
-                        <span>{game.game.status ?? "예정"}</span>
-                      </div>
-                      <p>{game.stadium}</p>
-                    </div>
-                  </article>
+                  <p className="diary-game-line" key={game.game.id}>
+                    <span>{game.time}</span>
+                    <strong>{game.matchup}</strong>
+                    <em>{game.stadium}</em>
+                  </p>
                 ))}
               </div>
             ) : (

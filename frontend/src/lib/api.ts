@@ -3,6 +3,9 @@ export type User = {
   email: string;
   nickname: string;
   favorite_team: string | null;
+  fan_since_year: number | null;
+  favorite_player: string | null;
+  home_stadium: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -62,6 +65,14 @@ export type CreateGamePayload = {
   home_score: number | null;
   away_score: number | null;
   status: string | null;
+};
+
+export type UpdateUserPayload = {
+  nickname?: string;
+  favorite_team?: string;
+  fan_since_year?: number | null;
+  favorite_player?: string | null;
+  home_stadium?: string | null;
 };
 
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
@@ -125,6 +136,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function fetchUsers() {
   return request<User[]>("/users");
+}
+
+export async function updateUser(userId: string | number, payload: UpdateUserPayload) {
+  return request<User>(`/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function fetchGames() {

@@ -12,6 +12,9 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     favorite_team = Column(String(100), nullable=True)
+    fan_since_year = Column(Integer, nullable=True)
+    favorite_player = Column(String(100), nullable=True)
+    home_stadium = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
