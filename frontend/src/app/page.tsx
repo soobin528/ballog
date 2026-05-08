@@ -53,15 +53,6 @@ export default async function HomePage() {
             아직 남긴 다이어리가 없어요. 첫 직관을 기록하면 여기에 바로 보여요.
           </p>
         )}
-
-        <div className="home-diary-focus__actions">
-          <Link className="button button--primary" href="/create">
-            직관 기록하기
-          </Link>
-          <Link className="button button--ghost" href="/diary">
-            다이어리 열기
-          </Link>
-        </div>
       </section>
     </PageShell>
   );

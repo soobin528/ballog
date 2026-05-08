@@ -45,7 +45,7 @@ export function PageShell({ children, className }: PageShellProps) {
           <span className="app-topbar__corner app-topbar__corner--left" />
           <span className="app-topbar__corner app-topbar__corner--right" />
           <div className="app-topbar__inner">
-            <strong>BALLLOG</strong>
+            <strong>BALLOG</strong>
             <p>⚾ 야구 직관 다이어리</p>
           </div>
         </header>

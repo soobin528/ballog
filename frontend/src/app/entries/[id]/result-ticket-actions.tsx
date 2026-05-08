@@ -53,7 +53,7 @@ function createTicketSvg(entry: Entry, game: Game) {
     <rect x="50" y="60" width="1100" height="555" rx="34" fill="#4b673f"/>
     <rect x="72" y="82" width="1056" height="511" rx="28" fill="none" stroke="#fff8e8" stroke-width="4" opacity=".55"/>
     <line x1="790" y1="100" x2="790" y2="575" stroke="#fff8e8" stroke-width="6" stroke-dasharray="16 16" opacity=".55"/>
-    <text x="100" y="150" fill="#fff8e8" font-size="46" font-weight="900" font-family="Arial, sans-serif">BALLLOG TICKET</text>
+    <text x="100" y="150" fill="#fff8e8" font-size="46" font-weight="900" font-family="Arial, sans-serif">BALLOG TICKET</text>
     <text x="100" y="235" fill="#d7c8a4" font-size="24" font-weight="800" font-family="Arial, sans-serif">경기장</text>
     <text x="100" y="278" fill="#fff8e8" font-size="38" font-weight="900" font-family="Arial, sans-serif">${escapeXml(game.stadium ?? "경기장 미정")}</text>
     <text x="100" y="350" fill="#d7c8a4" font-size="24" font-weight="800" font-family="Arial, sans-serif">매치업</text>

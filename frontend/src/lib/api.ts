@@ -107,14 +107,23 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(
+      `백엔드 서버에 연결하지 못했습니다. ${getApiBaseUrl()} 주소로 API 서버가 실행 중인지 확인해주세요.`,
+      0,
+    );
+  }
 
   if (!response.ok) {
     let message = "요청을 처리하지 못했습니다.";
