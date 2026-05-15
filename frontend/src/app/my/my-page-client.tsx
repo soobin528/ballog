@@ -23,6 +23,25 @@ function getFanYears(startYear: string) {
   return Math.max(currentYear - year + 1, 1);
 }
 
+function getSavedProfileSummary(user: User) {
+  const favoriteTeam = user.favorite_team
+    ? normalizeTeamName(user.favorite_team)
+    : null;
+  const fanYears = user.fan_since_year
+    ? getFanYears(String(user.fan_since_year))
+    : null;
+
+  if (favoriteTeam && fanYears) {
+    return `${favoriteTeam}과 함께한 ${fanYears}년차 팬`;
+  }
+
+  if (favoriteTeam) {
+    return `${favoriteTeam} 팬`;
+  }
+
+  return "프로필 정보를 입력해주세요";
+}
+
 function getShortDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     month: "numeric",
@@ -34,12 +53,14 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
   const [user, setUser] = useState(initialUser);
   const [nickname, setNickname] = useState(user.nickname);
   const [favoriteTeam, setFavoriteTeam] = useState(
-    normalizeTeamName(user.favorite_team ?? KBO_TEAMS[0].name),
+    user.favorite_team ? normalizeTeamName(user.favorite_team) : "",
   );
-  const [startYear, setStartYear] = useState(String(user.fan_since_year ?? "2021"));
+  const [startYear, setStartYear] = useState(
+    user.fan_since_year ? String(user.fan_since_year) : "",
+  );
   const [favoritePlayer, setFavoritePlayer] = useState(user.favorite_player ?? "");
   const [homeStadium, setHomeStadium] = useState(
-    normalizeStadiumName(user.home_stadium) || KBO_STADIUMS[0],
+    normalizeStadiumName(user.home_stadium),
   );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -52,8 +73,16 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
   const winCount = userEntries.filter((entry) => entry.is_win === true).length;
   const winRate =
     userEntries.length > 0 ? Math.round((winCount / userEntries.length) * 100) : 0;
-  const fanYears = getFanYears(startYear);
+  const savedFavoriteTeam = user.favorite_team
+    ? normalizeTeamName(user.favorite_team)
+    : "선택해주세요";
+  const savedProfileSummary = getSavedProfileSummary(user);
   const recentActivities = userEntries.slice(-3).reverse();
+
+  const handleDraftChange = (callback: () => void) => {
+    setMessage(null);
+    callback();
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -63,10 +92,10 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
     try {
       const updatedUser = await updateUser(user.id, {
         nickname: nickname.trim(),
-        favorite_team: favoriteTeam,
+        favorite_team: favoriteTeam || undefined,
         fan_since_year: Number(startYear) || null,
         favorite_player: favoritePlayer.trim() || null,
-        home_stadium: homeStadium,
+        home_stadium: homeStadium || null,
       });
       setUser(updatedUser);
       setMessage("프로필이 저장됐어요.");
@@ -90,7 +119,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
         <div className="my-hero-card__profile">
           <span className="section-heading__eyebrow">팬 프로필</span>
           <h1 id="my-title">{user.nickname}</h1>
-          <p>{favoriteTeam}과 함께한 {fanYears}년차 팬</p>
+          <p>{savedProfileSummary}</p>
           <div className="my-badge-row" aria-label="팬 배지">
             <span>직관러</span>
             {winCount > 0 ? <span>승리 기록 보유</span> : null}
@@ -99,7 +128,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
         </div>
         <div className="my-team-badge">
           <span>응원 팀</span>
-          <strong>{favoriteTeam}</strong>
+          <strong>{savedFavoriteTeam}</strong>
         </div>
       </article>
 
@@ -127,16 +156,21 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
           <label>
             <span>닉네임</span>
             <input
-              onChange={(event) => setNickname(event.target.value)}
+              onChange={(event) =>
+                handleDraftChange(() => setNickname(event.target.value))
+              }
               value={nickname}
             />
           </label>
           <label>
             <span>응원 팀</span>
             <select
-              onChange={(event) => setFavoriteTeam(event.target.value)}
+              onChange={(event) =>
+                handleDraftChange(() => setFavoriteTeam(event.target.value))
+              }
               value={favoriteTeam}
             >
+              <option value="">선택해주세요</option>
               {KBO_TEAMS.map((team) => (
                 <option key={team.name} value={team.name}>
                   {team.name}
@@ -148,14 +182,19 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
             <span>야구팬 시작 연도</span>
             <input
               inputMode="numeric"
-              onChange={(event) => setStartYear(event.target.value)}
+              onChange={(event) =>
+                handleDraftChange(() => setStartYear(event.target.value))
+              }
+              placeholder="예: 2021"
               value={startYear}
             />
           </label>
           <label>
             <span>최애 선수</span>
             <input
-              onChange={(event) => setFavoritePlayer(event.target.value)}
+              onChange={(event) =>
+                handleDraftChange(() => setFavoritePlayer(event.target.value))
+              }
               placeholder="예: 정수빈"
               value={favoritePlayer}
             />
@@ -163,9 +202,12 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
           <label className="my-profile-form__wide">
             <span>주 직관 구장</span>
             <select
-              onChange={(event) => setHomeStadium(event.target.value)}
+              onChange={(event) =>
+                handleDraftChange(() => setHomeStadium(event.target.value))
+              }
               value={homeStadium}
             >
+              <option value="">선택해주세요</option>
               {KBO_STADIUMS.map((stadium) => (
                 <option key={stadium} value={stadium}>
                   {stadium}
