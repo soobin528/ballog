@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.game_schema import GameCreate, GameResponse
+from app.schemas.game_schema import GameCreate, GameResponse, GameUpdate
 from app.services import game_service
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -18,6 +18,11 @@ def create_game(payload: GameCreate, db: Session = Depends(get_db)):
 @router.get("/{game_id}", response_model=GameResponse)
 def get_game(game_id: int, db: Session = Depends(get_db)):
     return game_service.get_game_by_id(db, game_id)
+
+
+@router.patch("/{game_id}", response_model=GameResponse)
+def update_game(game_id: int, payload: GameUpdate, db: Session = Depends(get_db)):
+    return game_service.update_game(db, game_id, payload)
 
 
 @router.get("", response_model=list[GameResponse])

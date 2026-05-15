@@ -13,6 +13,16 @@ class GameCreate(BaseModel):
     status: str | None = None
 
 
+class GameUpdate(BaseModel):
+    game_date: datetime | None = None
+    stadium: str | None = None
+    home_team: str | None = None
+    away_team: str | None = None
+    home_score: int | None = None
+    away_score: int | None = None
+    status: str | None = None
+
+
 class GameResponse(BaseModel):
     id: int
     game_date: datetime

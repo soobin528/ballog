@@ -192,7 +192,7 @@ def generate_ticket(entry, game) -> str:
     badge_font = _load_font(26)
     entry_font = _load_font(22)
 
-    draw.text((58, 42), "BALLLOG TICKET", font=title_font, fill=light_text)
+    draw.text((58, 42), "BALLOG TICKET", font=title_font, fill=light_text)
 
     left_x = 52
     top_y = 122

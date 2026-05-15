@@ -54,19 +54,21 @@ def update_user(db: Session, user_id: int, payload: UserUpdate) -> dict:
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if payload.nickname is not None and payload.nickname != user.username:
+    fields_set = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+
+    if "nickname" in fields_set and payload.nickname is not None and payload.nickname != user.username:
         existing_nickname = db.query(User).filter(User.username == payload.nickname).first()
         if existing_nickname is not None:
             raise HTTPException(status_code=400, detail="Nickname already exists")
         user.username = payload.nickname
 
-    if payload.favorite_team is not None:
+    if "favorite_team" in fields_set:
         user.favorite_team = payload.favorite_team
-    if payload.fan_since_year is not None:
+    if "fan_since_year" in fields_set:
         user.fan_since_year = payload.fan_since_year
-    if payload.favorite_player is not None:
+    if "favorite_player" in fields_set:
         user.favorite_player = payload.favorite_player
-    if payload.home_stadium is not None:
+    if "home_stadium" in fields_set:
         user.home_stadium = payload.home_stadium
 
     db.add(user)

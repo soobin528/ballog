@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import logging
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -13,6 +15,26 @@ from app.routers.game_router import router as game_router
 from app.routers.user_router import router as user_router
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+DEFAULT_FRONTEND_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+logger = logging.getLogger(__name__)
+
+
+def get_frontend_origins() -> list[str]:
+    configured_origins = os.getenv("FRONTEND_ORIGINS")
+    if not configured_origins:
+        return DEFAULT_FRONTEND_ORIGINS
+
+    return [
+        origin.strip()
+        for origin in configured_origins.split(",")
+        if origin.strip()
+    ]
 
 
 def create_tables():
@@ -23,7 +45,8 @@ def create_tables():
         Base.metadata.create_all(bind=engine)
         ensure_user_profile_columns()
     except Exception:
-        pass
+        logger.exception("Failed to initialize database tables.")
+        raise
 
 
 def ensure_user_profile_columns():
@@ -55,12 +78,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=get_frontend_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,9 +1,10 @@
 from datetime import date, datetime, time, timedelta
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.game import Game
-from app.schemas.game_schema import GameCreate
+from app.schemas.game_schema import GameCreate, GameUpdate
 
 
 def serialize_game(game: Game) -> dict:
@@ -22,6 +23,26 @@ def serialize_game(game: Game) -> dict:
 
 
 def create_game(db: Session, payload: GameCreate) -> dict:
+    existing_game = (
+        db.query(Game)
+        .filter(
+            Game.game_date == payload.game_date,
+            Game.venue == payload.stadium,
+            Game.home_team == payload.home_team,
+            Game.away_team == payload.away_team,
+        )
+        .first()
+    )
+
+    if existing_game is not None:
+        existing_game.home_score = payload.home_score
+        existing_game.away_score = payload.away_score
+        existing_game.status = payload.status
+        db.add(existing_game)
+        db.commit()
+        db.refresh(existing_game)
+        return serialize_game(existing_game)
+
     game = Game(
         game_date=payload.game_date,
         venue=payload.stadium,
@@ -41,6 +62,34 @@ def get_game_by_id(db: Session, game_id: int) -> dict:
     game = db.query(Game).filter(Game.id == game_id).first()
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
+    return serialize_game(game)
+
+
+def update_game(db: Session, game_id: int, payload: GameUpdate) -> dict:
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if game is None:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    fields_set = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+
+    if "game_date" in fields_set:
+        game.game_date = payload.game_date
+    if "stadium" in fields_set:
+        game.venue = payload.stadium
+    if "home_team" in fields_set and payload.home_team is not None:
+        game.home_team = payload.home_team
+    if "away_team" in fields_set and payload.away_team is not None:
+        game.away_team = payload.away_team
+    if "home_score" in fields_set:
+        game.home_score = payload.home_score
+    if "away_score" in fields_set:
+        game.away_score = payload.away_score
+    if "status" in fields_set:
+        game.status = payload.status
+
+    db.add(game)
+    db.commit()
+    db.refresh(game)
     return serialize_game(game)
 
 

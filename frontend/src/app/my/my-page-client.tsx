@@ -92,7 +92,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
     try {
       const updatedUser = await updateUser(user.id, {
         nickname: nickname.trim(),
-        favorite_team: favoriteTeam || undefined,
+        favorite_team: favoriteTeam || null,
         fan_since_year: Number(startYear) || null,
         favorite_player: favoritePlayer.trim() || null,
         home_stadium: homeStadium || null,

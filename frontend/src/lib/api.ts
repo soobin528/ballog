@@ -69,9 +69,11 @@ export type CreateGamePayload = {
   status: string | null;
 };
 
+export type UpdateGamePayload = Partial<CreateGamePayload>;
+
 export type UpdateUserPayload = {
   nickname?: string;
-  favorite_team?: string;
+  favorite_team?: string | null;
   fan_since_year?: number | null;
   favorite_player?: string | null;
   home_stadium?: string | null;
@@ -175,6 +177,13 @@ export async function fetchGame(gameId: string | number) {
 export async function createGame(payload: CreateGamePayload) {
   return request<Game>("/games", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateGame(gameId: string | number, payload: UpdateGamePayload) {
+  return request<Game>(`/games/${gameId}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
   });
 }

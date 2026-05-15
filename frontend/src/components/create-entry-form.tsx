@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import type { CreateEntryPayload, Game, User } from "@/lib/api";
-import { createEntry, createGame } from "@/lib/api";
+import { createEntry, createGame, updateGame } from "@/lib/api";
 import {
   getTeamByStadium,
   KBO_STADIUMS,
@@ -226,9 +226,16 @@ export function CreateEntryForm({
     setSubmitError(null);
 
     try {
-      let entryGameId = typeof gameId === "number" && !needsNewGame ? gameId : null;
+      let entryGameId = typeof gameId === "number" ? gameId : null;
 
-      if (!entryGameId) {
+      if (selectedGame && gameUsesSelectedLabels && scoreChanged) {
+        const updatedGame = await updateGame(selectedGame.id, {
+          home_score: homeScore,
+          away_score: awayScore,
+          status: "기록 완료",
+        });
+        entryGameId = updatedGame.id;
+      } else if (!entryGameId || needsNewGame) {
         const createdGame = await createGame({
           game_date: new Date(`${selectedDate}T18:30:00`).toISOString(),
           stadium: selectedStadium,
