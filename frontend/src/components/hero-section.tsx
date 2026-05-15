@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export function HeroSection() {
   const stadiumNav = [
-    { label: "다이어리", href: "/diary", position: "first", meta: "캘린더" },
-    { label: "기록", href: "/create", position: "home", meta: "오늘 직관" },
-    { label: "티켓", href: "/collection", position: "third", meta: "모음집" },
-    { label: "MY", href: "/my", position: "second", meta: "내 응원" },
+    { label: "다이어리", href: "/diary", position: "first" },
+    { label: "기록", href: "/create", position: "home" },
+    { label: "티켓", href: "/collection", position: "third" },
+    { label: "MY", href: "/my", position: "second" },
   ];
 
   return (
@@ -42,7 +42,6 @@ export function HeroSection() {
               key={item.label}
             >
               <span>{item.label}</span>
-              <em>{item.meta}</em>
             </Link>
           ))}
         </div>

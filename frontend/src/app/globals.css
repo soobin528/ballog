@@ -326,7 +326,7 @@ img {
       transparent 6px,
       transparent 12px
     ),
-    linear-gradient(180deg, #c9954a 0 20%, #f2c878 20% 34%, #446f38 34% 100%);
+    linear-gradient(180deg, #bd8442 0 20%, #f2c878 20% 34%, #4d6840 34% 100%);
   box-shadow: var(--shadow);
 }
 
@@ -357,12 +357,12 @@ img {
   background:
     repeating-linear-gradient(
       90deg,
-      rgba(38, 82, 42, 0.34) 0,
-      rgba(38, 82, 42, 0.34) 14px,
-      transparent 14px,
-      transparent 28px
+      rgba(45, 78, 40, 0.22) 0,
+      rgba(45, 78, 40, 0.22) 16px,
+      transparent 16px,
+      transparent 32px
     );
-  opacity: 0.5;
+  opacity: 0.42;
 }
 
 .pixel-ballpark__skyline {
@@ -396,17 +396,36 @@ img {
 
 .pixel-field__grass {
   position: absolute;
-  inset: 7% 3% 0;
+  /* inset: 7% 3% 0; */
   clip-path: polygon(50% 0, 100% 48%, 83% 100%, 17% 100%, 0 48%);
-  border: 4px solid #225729;
+  border: 4px solid #3f592d;
   background:
     repeating-linear-gradient(
       45deg,
-      #4f8a47 0,
-      #4f8a47 13px,
-      #3f793d 13px,
-      #3f793d 26px
+      rgba(255, 231, 154, 0.05) 0,
+      rgba(255, 231, 154, 0.05) 18px,
+      transparent 18px,
+      transparent 36px
+    ),
+    linear-gradient(135deg, #587a3d 0%, #496b37 48%, #3f6134 100%);
+  box-shadow:
+    inset 0 0 0 10px rgba(255, 228, 151, 0.08),
+    inset 0 -18px 0 rgba(48, 78, 36, 0.22);
+}
+
+.pixel-field__grass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(31, 64, 32, 0.14) 0,
+      rgba(31, 64, 32, 0.14) 14px,
+      transparent 14px,
+      transparent 28px
     );
+  opacity: 0.42;
 }
 
 .pixel-field__infield {
@@ -476,28 +495,24 @@ img {
     box-shadow 0.12s ease;
 }
 
+.pixel-base::before {
+  content: "";
+  position: absolute;
+  inset: -1.1rem;
+}
+
 .pixel-base:hover {
   transform: translate(calc(-50% + 2px), calc(-50% + 2px)) rotate(45deg);
   box-shadow: 4px 4px 0 rgba(63, 38, 25, 0.68);
 }
 
-.pixel-base span,
-.pixel-base em {
+.pixel-base span {
+  position: relative;
+  z-index: 1;
   transform: rotate(-45deg);
   text-align: center;
-}
-
-.pixel-base span {
   font-weight: 950;
   line-height: 1;
-}
-
-.pixel-base em {
-  color: var(--ballog-muted);
-  font-size: 0.72rem;
-  font-style: normal;
-  font-weight: 800;
-  line-height: 1.05;
 }
 
 .pixel-base--home {
@@ -506,10 +521,6 @@ img {
   border-color: var(--ballog-red-dark);
   background: var(--ballog-red);
   color: #fff8ef;
-}
-
-.pixel-base--home em {
-  color: rgba(255, 248, 239, 0.82);
 }
 
 .pixel-base--first {
@@ -1850,10 +1861,6 @@ img {
   border-radius: 999px;
   background: var(--ballog-blue);
   box-shadow: 0 0 0 2px rgba(255, 248, 232, 0.92);
-}
-
-.diary-date-ball--game {
-  border-color: var(--ballog-blue);
 }
 
 .diary-date-ball--selected {
