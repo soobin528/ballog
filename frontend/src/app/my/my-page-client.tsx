@@ -39,7 +39,13 @@ function getSavedProfileSummary(user: User) {
     return `${favoriteTeam} 팬`;
   }
 
-  return "프로필 정보를 입력해주세요";
+  return "아래에서 응원 팀과 야구팬 시작 연도를 설정해주세요.";
+}
+
+function getDisplayNickname(nickname: string) {
+  const trimmedNickname = nickname.trim();
+
+  return trimmedNickname || "프로필을 설정해주세요";
 }
 
 function getShortDate(value: string) {
@@ -77,6 +83,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
     ? normalizeTeamName(user.favorite_team)
     : "선택해주세요";
   const savedProfileSummary = getSavedProfileSummary(user);
+  const displayNickname = getDisplayNickname(user.nickname);
   const recentActivities = userEntries.slice(-3).reverse();
 
   const handleDraftChange = (callback: () => void) => {
@@ -118,7 +125,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
         </div>
         <div className="my-hero-card__profile">
           <span className="section-heading__eyebrow">팬 프로필</span>
-          <h1 id="my-title">{user.nickname}</h1>
+          <h1 id="my-title">{displayNickname}</h1>
           <p>{savedProfileSummary}</p>
           <div className="my-badge-row" aria-label="팬 배지">
             <span>직관러</span>
@@ -159,6 +166,7 @@ export function MyPageClient({ entries, initialUser }: MyPageClientProps) {
               onChange={(event) =>
                 handleDraftChange(() => setNickname(event.target.value))
               }
+              placeholder="예: 두산칸"
               value={nickname}
             />
           </label>
