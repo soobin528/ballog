@@ -2340,6 +2340,34 @@ img {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.create-diary-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  padding: 0.34rem;
+  border: 3px solid rgba(154, 79, 19, 0.32);
+  border-radius: 999px;
+  background: #fff8e8;
+}
+
+.create-diary-mode button {
+  min-height: 2.45rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ballog-muted);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.create-diary-mode button.is-active {
+  border: 3px solid var(--ballog-red-dark);
+  background: var(--ballog-red);
+  color: #fff8ef;
+  box-shadow: 3px 3px 0 rgba(86, 52, 33, 0.32);
+}
+
 .create-step-card__header {
   display: grid;
   gap: 0.18rem;

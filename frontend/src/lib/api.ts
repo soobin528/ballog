@@ -51,6 +51,8 @@ export type CreateEntryPayload = {
   game_id: number;
   watched_team: string;
   memo: string;
+  diary_text?: string | null;
+  auto_generate_diary?: boolean;
   missions: Array<{
     title: string;
     is_completed: boolean;

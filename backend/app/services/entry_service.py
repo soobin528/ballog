@@ -61,7 +61,11 @@ def create_entry(db: Session, payload: EntryCreate) -> dict:
         DiaryMission(title=mission.title, is_completed=mission.is_completed)
         for mission in payload.missions
     ]
-    entry.diary_text = generate_diary(entry, game, diary_missions)
+    if payload.auto_generate_diary:
+        entry.diary_text = generate_diary(entry, game, diary_missions)
+    else:
+        manual_diary = (payload.diary_text or payload.memo or "").strip()
+        entry.diary_text = manual_diary or None
     db.add(entry)
     db.flush()
 

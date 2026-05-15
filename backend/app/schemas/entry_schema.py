@@ -21,6 +21,8 @@ class EntryCreate(BaseModel):
     game_id: int
     watched_team: str
     memo: str | None = None
+    diary_text: str | None = None
+    auto_generate_diary: bool = True
     missions: list[EntryMissionCreate] = Field(default_factory=list)
 
 
