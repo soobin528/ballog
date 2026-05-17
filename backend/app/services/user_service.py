@@ -5,6 +5,36 @@ from app.models.user import User
 from app.schemas.user_schema import UserCreate, UserUpdate
 
 
+def normalize_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    normalized = value.strip()
+    return normalized or None
+
+
+def normalize_required_text(value: str, field_name: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    return normalized
+
+
+def validate_fan_since_year(year: int | None) -> None:
+    if year is not None and (year < 1900 or year > 2100):
+        raise HTTPException(
+            status_code=400,
+            detail="fan_since_year must be between 1900 and 2100",
+        )
+
+
+def get_fields_set(payload) -> set[str]:
+    if hasattr(payload, "model_fields_set"):
+        return payload.model_fields_set
+
+    return payload.__fields_set__
+
+
 def serialize_user(user: User) -> dict:
     return {
         "id": user.id,
@@ -20,18 +50,22 @@ def serialize_user(user: User) -> dict:
 
 
 def create_user(db: Session, payload: UserCreate) -> dict:
-    existing_email = db.query(User).filter(User.email == payload.email).first()
+    email = normalize_required_text(payload.email, "email")
+    nickname = normalize_required_text(payload.nickname, "nickname")
+    favorite_team = normalize_optional_text(payload.favorite_team)
+
+    existing_email = db.query(User).filter(User.email == email).first()
     if existing_email is not None:
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    existing_nickname = db.query(User).filter(User.username == payload.nickname).first()
+    existing_nickname = db.query(User).filter(User.username == nickname).first()
     if existing_nickname is not None:
         raise HTTPException(status_code=400, detail="Nickname already exists")
 
     user = User(
-        email=payload.email,
-        username=payload.nickname,
-        favorite_team=payload.favorite_team,
+        email=email,
+        username=nickname,
+        favorite_team=favorite_team,
         fan_since_year=None,
         favorite_player=None,
         home_stadium=None,
@@ -54,22 +88,25 @@ def update_user(db: Session, user_id: int, payload: UserUpdate) -> dict:
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    fields_set = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+    fields_set = get_fields_set(payload)
 
-    if "nickname" in fields_set and payload.nickname is not None and payload.nickname != user.username:
-        existing_nickname = db.query(User).filter(User.username == payload.nickname).first()
-        if existing_nickname is not None:
-            raise HTTPException(status_code=400, detail="Nickname already exists")
-        user.username = payload.nickname
+    if "nickname" in fields_set and payload.nickname is not None:
+        nickname = normalize_required_text(payload.nickname, "nickname")
+        if nickname != user.username:
+            existing_nickname = db.query(User).filter(User.username == nickname).first()
+            if existing_nickname is not None:
+                raise HTTPException(status_code=400, detail="Nickname already exists")
+            user.username = nickname
 
     if "favorite_team" in fields_set:
-        user.favorite_team = payload.favorite_team
+        user.favorite_team = normalize_optional_text(payload.favorite_team)
     if "fan_since_year" in fields_set:
+        validate_fan_since_year(payload.fan_since_year)
         user.fan_since_year = payload.fan_since_year
     if "favorite_player" in fields_set:
-        user.favorite_player = payload.favorite_player
+        user.favorite_player = normalize_optional_text(payload.favorite_player)
     if "home_stadium" in fields_set:
-        user.home_stadium = payload.home_stadium
+        user.home_stadium = normalize_optional_text(payload.home_stadium)
 
     db.add(user)
     db.commit()

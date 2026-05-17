@@ -1,6 +1,7 @@
 import argparse
 import csv
 import re
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -36,6 +37,21 @@ STADIUM_NAMES = {
 GAME_PATTERN = re.compile(
     r"^(?P<away>[A-Z가-힣]+?)(?P<away_score>\d+)?vs(?P<home_score>\d+)?(?P<home>[A-Z가-힣]+)$"
 )
+REQUIRED_COLUMNS = {"date", "time", "game", "stadium", "note"}
+
+
+@dataclass
+class ImportErrorDetail:
+    line_number: int
+    message: str
+
+
+@dataclass
+class ImportScheduleResult:
+    created_count: int = 0
+    updated_count: int = 0
+    skipped_count: int = 0
+    errors: list[ImportErrorDetail] = field(default_factory=list)
 
 
 def parse_date(raw_date: str, raw_time: str, year: int) -> datetime:
@@ -81,24 +97,51 @@ def get_status(note: str, away_score: int | None, home_score: int | None) -> str
     return "경기 예정"
 
 
-def import_schedule(csv_path: Path, year: int) -> tuple[int, int]:
+def validate_headers(fieldnames: list[str] | None) -> None:
+    if not fieldnames:
+        raise ValueError("CSV header is missing.")
+
+    missing_columns = REQUIRED_COLUMNS - set(fieldnames)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"Missing required CSV columns: {missing_text}")
+
+
+def import_schedule(
+    csv_path: Path,
+    year: int,
+    *,
+    dry_run: bool = False,
+    strict: bool = False,
+) -> ImportScheduleResult:
     if engine is None or SessionLocal is None:
         raise RuntimeError("DATABASE_URL is not configured.")
 
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+
     Base.metadata.create_all(bind=engine)
 
-    created_count = 0
-    updated_count = 0
-
     with csv_path.open(encoding="utf-8-sig", newline="") as file:
-        rows = list(csv.DictReader(file))
+        reader = csv.DictReader(file)
+        validate_headers(reader.fieldnames)
+        rows = list(reader)
+
+    result = ImportScheduleResult()
 
     with SessionLocal() as db:
-        for row in rows:
-            game_date = parse_date(row["date"], row["time"], year)
-            away_team, home_team, away_score, home_score = parse_game(row["game"])
-            stadium = STADIUM_NAMES.get(row["stadium"], row["stadium"])
-            status = get_status(row["note"], away_score, home_score)
+        for index, row in enumerate(rows, start=2):
+            try:
+                game_date = parse_date(row["date"], row["time"], year)
+                away_team, home_team, away_score, home_score = parse_game(row["game"])
+                stadium = STADIUM_NAMES.get(row["stadium"], row["stadium"])
+                status = get_status(row["note"], away_score, home_score)
+            except (KeyError, TypeError, ValueError) as error:
+                result.skipped_count += 1
+                result.errors.append(
+                    ImportErrorDetail(line_number=index, message=str(error))
+                )
+                continue
 
             existing_game = (
                 db.query(Game)
@@ -115,7 +158,7 @@ def import_schedule(csv_path: Path, year: int) -> tuple[int, int]:
                 existing_game.home_score = home_score
                 existing_game.away_score = away_score
                 existing_game.status = status
-                updated_count += 1
+                result.updated_count += 1
                 continue
 
             db.add(
@@ -129,21 +172,42 @@ def import_schedule(csv_path: Path, year: int) -> tuple[int, int]:
                     status=status,
                 )
             )
-            created_count += 1
+            result.created_count += 1
 
-        db.commit()
+        if strict and result.errors:
+            db.rollback()
+            error_count = len(result.errors)
+            raise ValueError(f"Failed to import schedule: {error_count} invalid rows.")
 
-    return created_count, updated_count
+        if dry_run:
+            db.rollback()
+        else:
+            db.commit()
+
+    return result
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Import 2026 KBO schedule CSV into games.")
     parser.add_argument("csv_path", type=Path)
     parser.add_argument("--year", type=int, default=2026)
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 
-    created_count, updated_count = import_schedule(args.csv_path, args.year)
-    print(f"created={created_count} updated={updated_count}")
+    result = import_schedule(
+        args.csv_path,
+        args.year,
+        dry_run=args.dry_run,
+        strict=args.strict,
+    )
+    print(
+        f"created={result.created_count} "
+        f"updated={result.updated_count} "
+        f"skipped={result.skipped_count}"
+    )
+    for error in result.errors:
+        print(f"line={error.line_number} error={error.message}")
 
 
 if __name__ == "__main__":
